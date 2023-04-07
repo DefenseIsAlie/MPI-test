@@ -319,12 +319,18 @@ int main(int argc, char *argv[]) {
     // We do not need periodicity in dimensions for SUMMA, so we set periods to 0.
     // We also do not need to reorder ranking, so we set reorder to 0 too.
     //
+    MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, periods, reorder, &comm_cart);
     // Dimensions of the new communicator should be [n_proc_rows, n_proc_cols].
     // New communicator with Cartesian topology should be assigned to
     // variable `comm_cart`.
     //
     // MPI_Cart_create(... YOUR CODE HERE ...);
     // ====================================================
+
+    // set up 2d mapping
+    dims[0] = n_proc_rows;
+    dims[1] = n_proc_cols;
+    MPI_Cart_create(comm_cart, ndims, dims, periods, 1, &comm_cart);
 
 
     // assume for simplicity that matrix dims are dividable by proc grid size
