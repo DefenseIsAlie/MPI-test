@@ -228,28 +228,30 @@ void SUMMA(MPI_Comm comm_cart, const int mb, const int nb, const int kb, double 
     //
     //
     // Sample solution:
-    // for (int bcast_root = 0; bcast_root < nblks; ++bcast_root) {
-    //
-    //    int root_col = bcast_root;
-    //    int root_row = bcast_root;
-    //
-    //    // owner of A_loc[root_col,:] will broadcast its block within row comm
-    //    if (my_col == root_col) {
-    //        // copy A_loc_save to A_loc
-    //    }
-    //    // broadcast A_loc from root_col within row_comm
-    //
-    //    // owner of B_loc[:,root_row] will broadcast its block within col comm
-    //    if (my_row == root_row) {
-    //        // copy B_loc_cave to B_loc
-    //    }
-    //    // broadcast B_loc from root_row within col_comm
-    //
-    //    // multiply local blocks A_loc, B_loc using matmul_naive
-    //    // and store in C_loc_tmp
-    //
-    //    // C_loc = C_loc + C_loc_tmp using plus_matrix
-    //}
+    for (int bcast_root = 0; bcast_root < nblks; ++bcast_root) {
+    
+       int root_col = bcast_root;
+       int root_row = bcast_root;
+    
+       // owner of A_loc[root_col,:] will broadcast its block within row comm
+       if (my_col == root_col) {
+            MPI_Bcast(A_loc, mb*nb, MPI_DOUBLE, root_col, row_comm);
+       }
+       // broadcast A_loc from root_col within row_comm
+    
+       // owner of B_loc[:,root_row] will broadcast its block within col comm
+       if (my_row == root_row) {
+            MPI_Bcast(B_loc, nb*kb, MPI_DOUBLE, root_row, col_comm);
+       }
+       // broadcast B_loc from root_row within col_comm
+    
+       // multiply local blocks A_loc, B_loc using matmul_naive
+       matmul_naive(mb, nb, kb, A_loc, B_loc, C_loc_tmp);
+       // and store in C_loc_tmp
+    
+       // C_loc = C_loc + C_loc_tmp using plus_matrix
+       plus_matrix(mb, kb, C_loc, C_loc_tmp, C_loc);
+    }
     // ====================================================
 
 
@@ -328,9 +330,12 @@ int main(int argc, char *argv[]) {
     // ====================================================
 
     // set up 2d mapping
-    dims[0] = n_proc_rows;
-    dims[1] = n_proc_cols;
+    dims[0] = n_proc_cols;
+    dims[1] = n_proc_rows;
+
+    // create the 2d mapping
     MPI_Cart_create(comm_cart, ndims, dims, periods, 1, &comm_cart);
+    // MPI_Comm_rank(comm_cart, &myrank);
 
 
     // assume for simplicity that matrix dims are dividable by proc grid size
@@ -392,7 +397,7 @@ int main(int argc, char *argv[]) {
 
     // You should implement SUMMA algorithm in SUMMA function.
     // SUMMA stub function is in this file (see above).
-//    SUMMA(comm_cart, mb, nb, kb, A_loc, B_loc, C_loc);
+   SUMMA(comm_cart, mb, nb, kb, A_loc, B_loc, C_loc);
 
     tend = MPI_Wtime();
 
