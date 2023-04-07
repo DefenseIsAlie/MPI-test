@@ -174,6 +174,8 @@ void SUMMA(MPI_Comm comm_cart, const int mb, const int nb, const int kb, double 
 
     int my_col = coords[0];
     int my_row = coords[1];
+    
+    printf("My rank is %d and my row,col are %d, %d \n", myrank, my_row, my_col);
 
     MPI_Comm row_comm;
     MPI_Comm col_comm;
@@ -202,6 +204,7 @@ void SUMMA(MPI_Comm comm_cart, const int mb, const int nb, const int kb, double 
 
 
     int nblks = n / nb;
+    
     // ======== YOUR CODE HERE ============================
     // Implement main SUMMA loop here: 
     // We use the term "root column" to mean the "k" loop described in the assignment.
@@ -229,28 +232,45 @@ void SUMMA(MPI_Comm comm_cart, const int mb, const int nb, const int kb, double 
     //
     // Sample solution:
     for (int bcast_root = 0; bcast_root < nblks; ++bcast_root) {
-    
+        
        int root_col = bcast_root;
        int root_row = bcast_root;
     
        // owner of A_loc[root_col,:] will broadcast its block within row comm
        if (my_col == root_col) {
-            MPI_Bcast(A_loc, mb*nb, MPI_DOUBLE, root_col, row_comm);
+            int row_comm_rank;
+            MPI_Comm_rank(row_comm, &row_comm_rank);
+            MPI_Bcast(A_loc_save, mb*nb, MPI_DOUBLE, row_comm_rank, row_comm);
+       } else
+       {    
+            int row_comm_rank;
+            MPI_Comm_rank(row_comm, &row_comm_rank);
+            MPI_Bcast(A_loc_save, mb*nb, MPI_DOUBLE, root_col, row_comm);
        }
+       
        // broadcast A_loc from root_col within row_comm
     
        // owner of B_loc[:,root_row] will broadcast its block within col comm
        if (my_row == root_row) {
-            MPI_Bcast(B_loc, nb*kb, MPI_DOUBLE, root_row, col_comm);
+            int col_comm_rank;
+            MPI_Comm_rank(col_comm, &col_comm_rank);
+            MPI_Bcast(B_loc_save, nb*kb, MPI_DOUBLE, col_comm_rank, col_comm);
+       } else{
+            int col_comm_rank;
+            MPI_Comm_rank(col_comm, &col_comm_rank);
+            MPI_Bcast(B_loc_save, nb*kb, MPI_DOUBLE, root_row, col_comm);
        }
        // broadcast B_loc from root_row within col_comm
+
     
        // multiply local blocks A_loc, B_loc using matmul_naive
-       matmul_naive(mb, nb, kb, A_loc, B_loc, C_loc_tmp);
+       matmul_naive(mb, nb, kb, A_loc_save, B_loc_save, C_loc_tmp);
        // and store in C_loc_tmp
     
        // C_loc = C_loc + C_loc_tmp using plus_matrix
        plus_matrix(mb, kb, C_loc, C_loc_tmp, C_loc);
+
+    //    MPI_Barrier(comm_cart);
     }
     // ====================================================
 
@@ -301,6 +321,7 @@ int main(int argc, char *argv[]) {
     // and allow only this nproc
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+    printf("%d\n", nprocs);
 
     int n_proc_rows = sqrt(nprocs);
     int n_proc_cols = n_proc_rows;
@@ -321,7 +342,7 @@ int main(int argc, char *argv[]) {
     // We do not need periodicity in dimensions for SUMMA, so we set periods to 0.
     // We also do not need to reorder ranking, so we set reorder to 0 too.
     //
-    MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, periods, reorder, &comm_cart);
+    // MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, periods, reorder, &comm_cart);
     // Dimensions of the new communicator should be [n_proc_rows, n_proc_cols].
     // New communicator with Cartesian topology should be assigned to
     // variable `comm_cart`.
@@ -334,7 +355,7 @@ int main(int argc, char *argv[]) {
     dims[1] = n_proc_rows;
 
     // create the 2d mapping
-    MPI_Cart_create(comm_cart, ndims, dims, periods, 1, &comm_cart);
+    MPI_Cart_create(MPI_COMM_WORLD, ndims, dims, periods, reorder, &comm_cart);
     // MPI_Comm_rank(comm_cart, &myrank);
 
 
@@ -397,7 +418,9 @@ int main(int argc, char *argv[]) {
 
     // You should implement SUMMA algorithm in SUMMA function.
     // SUMMA stub function is in this file (see above).
+    printf("Started summa\n");
    SUMMA(comm_cart, mb, nb, kb, A_loc, B_loc, C_loc);
+    printf("Completed summa\n");
 
     tend = MPI_Wtime();
 
@@ -414,7 +437,7 @@ int main(int argc, char *argv[]) {
     // Use MPI_Reduce function and MPI_MAX operation.
     // MPI_Reduce(... YOUR CODE HERE ...);
     // ====================================================
-    MPI_Reduce(&etime, &max_etime, nprocs, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    // MPI_Reduce(&etime, &max_etime, nprocs, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (myrank == 0) {
         printf("SUMMA took %f sec\n", max_etime);
     }

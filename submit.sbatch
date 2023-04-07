@@ -12,7 +12,7 @@
 
 pwd; hostname; date
 export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
-srun ./summa_check  1680
+srun ./summa  1680
 date
 
 
