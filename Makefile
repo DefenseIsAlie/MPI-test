@@ -12,6 +12,8 @@ SRC=summa.cpp
 all: $(EXECUTABLE)
 
 summa: summa.cpp
+	LANG=en_US.utf8
+	LC_ALL=en_US.utf8
 	$(MPICXX) $(CXXFLAGS) -o $@ $^
 
 summa_nb: summa.cpp
