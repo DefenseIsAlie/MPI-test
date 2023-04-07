@@ -414,6 +414,7 @@ int main(int argc, char *argv[]) {
     // Use MPI_Reduce function and MPI_MAX operation.
     // MPI_Reduce(... YOUR CODE HERE ...);
     // ====================================================
+    MPI_Reduce(&etime, &max_etime, nprocs, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if (myrank == 0) {
         printf("SUMMA took %f sec\n", max_etime);
     }
