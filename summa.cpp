@@ -195,19 +195,19 @@ void SUMMA(MPI_Comm comm_cart, const int mb, const int nb, const int kb, double 
 
     // printf("My rank is %d and my row,col are %d, %d \n", myrank, my_row, my_col);
 
-    MPI_Comm row_comm;
     MPI_Comm col_comm;
+    MPI_Comm row_comm;
     int remain_dims[2];
 
-    // create row comms for A
+    // create col comms for A
     remain_dims[0] = 1;
     remain_dims[1] = 0;
-    MPI_Cart_sub(comm_cart, remain_dims, &row_comm);
+    MPI_Cart_sub(comm_cart, remain_dims, &col_comm);
 
-    // create col comms for B
+    // create row comms for B
     remain_dims[0] = 0;
     remain_dims[1] = 1;
-    MPI_Cart_sub(comm_cart, remain_dims, &col_comm);
+    MPI_Cart_sub(comm_cart, remain_dims, &row_comm);
 
     double *A_loc_save = (double *)calloc(mb * nb, sizeof(double));
     double *B_loc_save = (double *)calloc(nb * kb, sizeof(double));
@@ -259,13 +259,13 @@ void SUMMA(MPI_Comm comm_cart, const int mb, const int nb, const int kb, double 
         if (my_col == root_col) {
             memcpy(A_loc, A_loc_save, mb*nb*sizeof(double));
         }
-        MPI_Bcast(A_loc, mb*nb, MPI_DOUBLE, root_col, col_comm);
+        MPI_Bcast(A_loc, mb*nb, MPI_DOUBLE, root_col, row_comm);
 
         // owner of B_loc[:,root_row] will broadcast its block within col comm
         if (my_row == root_row) {
             memcpy(B_loc, B_loc_save, nb*kb*sizeof(double));
         }
-        MPI_Bcast(B_loc, nb*kb, MPI_DOUBLE, root_row, row_comm);
+        MPI_Bcast(B_loc, nb*kb, MPI_DOUBLE, root_row, col_comm);
 
         // multiply local blocks A_loc, B_loc using matmul_naive
         // and store in C_loc_tmp
@@ -330,6 +330,9 @@ int main(int argc, char *argv[])
     int nprocs;
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
     // printf("%d\n", nprocs);
+    if (myrank == 0){
+    printf("NPROC: %d\n", nprocs);
+    }
 
     int n_proc_rows = sqrt(nprocs);
     int n_proc_cols = n_proc_rows;
