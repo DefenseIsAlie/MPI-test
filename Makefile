@@ -27,5 +27,8 @@ summa_check: summa.cpp
 # summa_nb_check: summa.cpp
 # 	$(MPICXX) -DCHECK_NUMERICS $(CXXFLAGS) -o $@ $^
 
+team:
+	@echo Abhishek Josyula 200010021@iitdh.ac.in
+
 clean:
 	rm -f *.o *~ core $(EXECUTABLE)

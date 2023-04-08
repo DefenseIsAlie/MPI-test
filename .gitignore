@@ -1,2 +1,7 @@
 .vscode/**
 *.out
+
+summa
+summa_check
+
+*.log
