@@ -1,7 +1,7 @@
 MPICXX=mpiicpc
 
 ifeq ($(LOCAL),1)
-	MPICXX=mpiCC
+	MPICXX=mpic++
 endif
 
 DEBUG ?= 0
@@ -11,21 +11,12 @@ else
 	CXXFLAGS=-O3 -g -std=c++11
 endif
 
-EXECUTABLE =  summa  summa_check
-SRC=summa.cpp
+EXECUTABLE =  test  
+SRC=main.cpp
 all: $(EXECUTABLE)
 
-summa: summa.cpp
+test: main.cpp
 	LANG=en_US.utf8 $(MPICXX) $(CXXFLAGS) -o $@ $^
-
-# summa_nb: summa.cpp
-# 	$(MPICXX) $(CXXFLAGS) -o $@ $^
-
-summa_check: summa.cpp
-	LANG=en_US.utf8 $(MPICXX) -DCHECK_NUMERICS $(CXXFLAGS) -o $@ $^
-
-# summa_nb_check: summa.cpp
-# 	$(MPICXX) -DCHECK_NUMERICS $(CXXFLAGS) -o $@ $^
 
 team:
 	@echo Abhishek Josyula 200010021@iitdh.ac.in
